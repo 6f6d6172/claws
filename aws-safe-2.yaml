@@ -1,0 +1,29 @@
+name: Push Priority Relations to S3
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  push-relations:
+    name: Push Priority Relations
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials 1
+        id: creds
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::123456789100:role/my-github-actions-role
+          output-credentials: true
+      - name: Configure AWS Credentials 2
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          # safe! even though we're setting `aws-secret-access-key`, it's not from a static source
+          aws-region: us-east-2
+          aws-access-key-id: ${{ steps.creds.outputs.aws-access-key-id }}
+          aws-secret-access-key: ${{ steps.creds.outputs.aws-secret-access-key }}
+          aws-session-token: ${{ steps.creds.outputs.aws-session-token }}
+          role-to-assume: arn:aws:iam::123456789100:role/my-other-github-actions-role
+      - name: Push relations JSON to prod S3
+        run: aws s3 cp relations.json s3://production-data/
